@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/models/trip_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.0.96:8080/api'; // Thay bằng URL thực tế
+  static const String baseUrl = 'http://192.168.1.9:8080/api'; // Thay bằng URL thực tế
 
   // Đăng nhập và lưu token
   Future<String> login(String username, String password) async {
