@@ -112,171 +112,603 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: EdgeInsets.all(16),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(4),
-                      topRight: Radius.circular(4),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Tìm thấy danh sách vé thành công',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding: EdgeInsets.all(16),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                // Content
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Booking Code: $bookingCode',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        if (result['passengerInfo'] != null) ...[
-                          SizedBox(height: 8),
-                          Text(
-                            'Hành khách: ${result['passengerInfo']}',
-                            style: TextStyle(fontSize: 14),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Tìm thấy danh sách vé thành công',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                         ],
-                        SizedBox(height: 16),
-                        Text(
-                          'Danh sách vé (${tickets.length} vé):',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 8),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: tickets.length,
-                          itemBuilder: (context, index) {
-                            final ticket = tickets[index];
-                            return Container(
-                              margin: EdgeInsets.symmetric(vertical: 4),
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: ticket['isUsed'] == true ? Colors.red[50] : Colors.green[50],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: ticket['isUsed'] == true ? Colors.red[300]! : Colors.green[300]!,
-                                ),
+                      ),
+                    ),
+                    // Content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Booking Code: $bookingCode',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            if (result['passengerInfo'] != null) ...[
+                              SizedBox(height: 8),
+                              Text(
+                                'Hành khách: ${result['passengerInfo']}',
+                                style: TextStyle(fontSize: 14),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Vé ${index + 1}: ',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                      Expanded(
-                                        child: Text(
-                                          ticket['ticketCode']?.toString() ?? 'N/A',
-                                          style: TextStyle(
-                                            fontFamily: 'monospace',
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (ticket['seatNumber'] != null) ...[
-                                    SizedBox(height: 4),
-                                    Text('Ghế: ${ticket['seatNumber']}'),
-                                  ],
-                                  if (ticket['passengerName'] != null) ...[
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Tên: ${ticket['passengerName']}',
-                                      overflow: TextOverflow.ellipsis,
+                            ],
+                            SizedBox(height: 16),
+                            Text(
+                              'Danh sách vé (${tickets.length} vé):',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 8),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: tickets.length,
+                              itemBuilder: (context, index) {
+                                final ticket = tickets[index];
+                                return Container(
+                                  margin: EdgeInsets.symmetric(vertical: 4),
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: ticket['status'] == 'used' ? Colors.blue[50] : 
+                                           ticket['status'] == 'cancelled' ? Colors.red[50] : Colors.green[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: ticket['status'] == 'used' ? Colors.blue[300]! :
+                                             ticket['status'] == 'cancelled' ? Colors.red[300]! : Colors.green[300]!,
                                     ),
-                                  ],
-                                  if (ticket['status'] != null) ...[
-                                    SizedBox(height: 4),
-                                    Wrap(
-                                      children: [
-                                        Text('Trạng thái: '),
-                                        Text(
-                                          ticket['status'].toString(),
-                                          style: TextStyle(
-                                            color: ticket['status'] == 'valid' ? Colors.green : Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        if (ticket['isUsed'] == true) ...[
-                                          Text(' - '),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
                                           Text(
-                                            'Đã sử dụng',
-                                            style: TextStyle(
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.bold,
+                                            'Vé ${index + 1}: ',
+                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              ticket['ticketCode']?.toString() ?? 'N/A',
+                                              style: TextStyle(
+                                                fontFamily: 'monospace',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
+                                      ),
+                                      if (ticket['seatNumber'] != null) ...[
+                                        SizedBox(height: 4),
+                                        Text('Ghế: ${ticket['seatNumber']}'),
                                       ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            );
-                          },
+                                      if (ticket['passengerName'] != null) ...[
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'Tên: ${ticket['passengerName']}',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      if (ticket['status'] != null) ...[
+                                        SizedBox(height: 4),
+                                        Wrap(
+                                          children: [
+                                            Text('Trạng thái: '),
+                                            Text(
+                                              ticket['status'].toString(),
+                                              style: TextStyle(
+                                                color: ticket['status'] == 'valid' ? Colors.green : 
+                                                       ticket['status'] == 'used' ? Colors.blue :
+                                                       ticket['status'] == 'cancelled' ? Colors.red : Colors.grey,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            if (ticket['status'] == 'used') ...[
+                                              Text(' - '),
+                                              Text(
+                                                'Đã sử dụng',
+                                                style: TextStyle(
+                                                  color: Colors.blue,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                      SizedBox(height: 12),
+                                      // Action Buttons
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: ElevatedButton.icon(
+                                              onPressed: (ticket['status'] == 'used' || ticket['status'] == 'cancelled' || ticket['_loading'] == true) ? null : () async {
+                                                await _confirmTicketInDialog(ticket['ticketCode']?.toString() ?? '', index, tickets, setDialogState);
+                                              },
+                                              icon: ticket['_loading'] == true ? 
+                                                SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                  ),
+                                                ) : Icon(Icons.check, size: 16),
+                                              label: Text('Xác nhận', style: TextStyle(fontSize: 12)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                                foregroundColor: Colors.white,
+                                                padding: EdgeInsets.symmetric(vertical: 8),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: ElevatedButton.icon(
+                                              onPressed: (ticket['status'] == 'used' || ticket['status'] == 'cancelled' || ticket['_loading'] == true) ? null : () async {
+                                                await _cancelTicketInDialog(ticket['ticketCode']?.toString() ?? '', index, tickets, setDialogState);
+                                              },
+                                              icon: ticket['_loading'] == true ? 
+                                                SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                  ),
+                                                ) : Icon(Icons.cancel, size: 16),
+                                              label: Text('Hủy vé', style: TextStyle(fontSize: 12)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                foregroundColor: Colors.white,
+                                                padding: EdgeInsets.symmetric(vertical: 8),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Actions
-                Container(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Đóng dialog
-                          Navigator.of(context).pop(); // Quay lại danh sách chuyến đi
-                        },
-                        child: Text('OK'),
                       ),
-                    ],
-                  ),
+                    ),
+                    // Actions
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          // Nút xác nhận tất cả
+                          if (tickets.any((ticket) => ticket['status'] != 'used' && ticket['status'] != 'cancelled'))
+                            Container(
+                              width: double.infinity,
+                              margin: EdgeInsets.only(bottom: 12),
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  await _confirmAllTickets(tickets, setDialogState);
+                                },
+                                icon: Icon(Icons.done_all),
+                                label: Text('Xác nhận tất cả vé'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // Đóng dialog
+                                  Navigator.of(context).pop(); // Quay lại danh sách chuyến đi
+                                },
+                                child: Text('OK'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  Future<void> _confirmAllTickets(List<Map<String, dynamic>> tickets, StateSetter setDialogState) async {
+    try {
+      // Lấy danh sách ticket codes chưa được xử lý
+      final availableTickets = tickets
+          .where((ticket) => ticket['status'] != 'used' && ticket['status'] != 'cancelled')
+          .toList();
+      
+      if (availableTickets.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không có vé nào để xác nhận!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final ticketCodes = availableTickets
+          .map((ticket) => ticket['ticketCode']?.toString() ?? '')
+          .where((code) => code.isNotEmpty)
+          .toList();
+
+      if (ticketCodes.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không tìm thấy mã vé hợp lệ!'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Hiển thị dialog xác nhận
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Xác nhận tất cả vé'),
+          content: Text('Bạn có chắc chắn muốn xác nhận ${ticketCodes.length} vé?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Không'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Có', style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // Hiển thị loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Đang xác nhận ${ticketCodes.length} vé...', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+      );
+
+      final api = ApiService();
+      final response = await api.updateTicketStatus(ticketCodes, 'used', 'Hành khách đã lên xe');
+
+      Navigator.of(context).pop(); // Đóng loading dialog
+
+      if (response['code'] == 200) {
+        // Cập nhật trạng thái tất cả vé trong dialog
+        setDialogState(() {
+          for (int i = 0; i < tickets.length; i++) {
+            if (ticketCodes.contains(tickets[i]['ticketCode']?.toString())) {
+              tickets[i]['status'] = 'used';
+              tickets[i]['isUsed'] = true;
+            }
+          }
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xác nhận thành công ${ticketCodes.length} vé!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        throw Exception(response['message'] ?? 'Không thể xác nhận tất cả vé');
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Đóng loading dialog nếu có
+
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmTicketInDialog(String ticketCode, int index, List<Map<String, dynamic>> tickets, StateSetter setDialogState) async {
+    try {
+      // Hiển thị loading mini
+      setDialogState(() {
+        tickets[index]['_loading'] = true;
+      });
+
+      final api = ApiService();
+      final response = await api.updateTicketStatus([ticketCode], 'used', 'Hành khách đã lên xe');
+
+      if (response['code'] == 200) {
+        // Cập nhật trạng thái vé trong dialog
+        setDialogState(() {
+          tickets[index]['isUsed'] = true;
+          tickets[index]['status'] = 'used';
+          tickets[index]['_loading'] = false;
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xác nhận vé thành công!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setDialogState(() {
+          tickets[index]['_loading'] = false;
+        });
+        throw Exception(response['message'] ?? 'Không thể xác nhận vé');
+      }
+    } catch (e) {
+      setDialogState(() {
+        tickets[index]['_loading'] = false;
+      });
+
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _cancelTicketInDialog(String ticketCode, int index, List<Map<String, dynamic>> tickets, StateSetter setDialogState) async {
+    // Hiển thị dialog xác nhận
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Xác nhận hủy vé'),
+        content: Text('Bạn có chắc chắn muốn hủy vé $ticketCode?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Không'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Có', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Hiển thị loading mini
+      setDialogState(() {
+        tickets[index]['_loading'] = true;
+      });
+
+      final api = ApiService();
+      final response = await api.updateTicketStatus([ticketCode], 'cancelled', 'Vé đã bị hủy');
+
+      if (response['code'] == 200) {
+        // Cập nhật trạng thái vé trong dialog
+        setDialogState(() {
+          tickets[index]['status'] = 'cancelled';
+          tickets[index]['_loading'] = false;
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hủy vé thành công!'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setDialogState(() {
+          tickets[index]['_loading'] = false;
+        });
+        throw Exception(response['message'] ?? 'Không thể hủy vé');
+      }
+    } catch (e) {
+      setDialogState(() {
+        tickets[index]['_loading'] = false;
+      });
+
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmTicket(String ticketCode, int index, List<Map<String, dynamic>> tickets) async {
+    try {
+      // Hiển thị loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final api = ApiService();
+      final response = await api.updateTicketStatus([ticketCode], 'used', 'Hành khách đã lên xe');
+
+      Navigator.of(context).pop(); // Đóng loading dialog
+
+      if (response['code'] == 200) {
+        // Cập nhật trạng thái vé trong danh sách
+        setState(() {
+          tickets[index]['isUsed'] = true;
+          tickets[index]['status'] = 'used';
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xác nhận vé thành công!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        throw Exception(response['message'] ?? 'Không thể xác nhận vé');
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Đóng loading dialog nếu có
+
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _cancelTicket(String ticketCode, int index, List<Map<String, dynamic>> tickets) async {
+    // Hiển thị dialog xác nhận
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Xác nhận hủy vé'),
+        content: Text('Bạn có chắc chắn muốn hủy vé $ticketCode?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Không'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Có', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Hiển thị loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final api = ApiService();
+      final response = await api.updateTicketStatus([ticketCode], 'cancelled', 'Vé đã bị hủy');
+
+      Navigator.of(context).pop(); // Đóng loading dialog
+
+      if (response['code'] == 200) {
+        // Cập nhật trạng thái vé trong danh sách
+        setState(() {
+          tickets[index]['status'] = 'cancelled';
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hủy vé thành công!'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        throw Exception(response['message'] ?? 'Không thể hủy vé');
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Đóng loading dialog nếu có
+
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _showResultDialog(bool isSuccess, String message) {

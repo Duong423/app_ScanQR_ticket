@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/models/trip_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.9:8080/api'; // Thay bằng URL thực tế
+  static const String baseUrl = 'http://192.168.1.6:8080/api'; // Thay bằng URL thực tế
 
   // Đăng nhập và lưu token
   Future<String> login(String username, String password) async {
@@ -121,6 +121,49 @@ class ApiService {
       } else {
         final errorData = jsonDecode(response.body);
         throw Exception(errorData['message'] ?? 'Vé này không thuộc về chuyến đi hiện tại hoặc chuyến đi không tồn tại');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Lỗi kết nối: $e');
+    }
+  }
+
+  // Cập nhật trạng thái vé
+  Future<Map<String, dynamic>> updateTicketStatus(List<String> ticketCodes, String status, String reason) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('accessToken');
+      if (token == null) throw Exception('Chưa đăng nhập');
+
+      print('Calling API: $baseUrl/tickets/update-status');
+      print('Request body: {ticketCodes: $ticketCodes, status: $status, reason: $reason}');
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/tickets/update-status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'ticketCodes': ticketCodes,
+          'status': status,
+          'reason': reason,
+        }),
+      );
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 401) {
+        await prefs.remove('accessToken');
+        throw Exception('Phiên đăng nhập đã hết hạn');
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Không thể cập nhật trạng thái vé');
       }
     } catch (e) {
       if (e is Exception) {
