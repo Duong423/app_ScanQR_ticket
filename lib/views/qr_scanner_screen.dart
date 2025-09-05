@@ -344,6 +344,30 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                                 ),
                               ),
                             ),
+                          
+                          SizedBox(height: 12),
+
+                          // Nút hủy tất cả vé - chỉ hiển thị khi có vé không phải cancelled và used
+                          if (tickets.any((ticket) => ticket['status'] != 'cancelled' && ticket['status'] != 'used'))
+                            Container(
+                              width: double.infinity,
+                              margin: EdgeInsets.only(bottom: 12),
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  await _confirmCancelledAllTickets(tickets, setDialogState);
+                                },
+                                icon: Icon(Icons.cancel),
+                                label: Text('Xác nhận hủy tất cả vé'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color.fromARGB(255, 222, 4, 44),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -478,7 +502,116 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       );
     }
   }
+  ///HỦY TẤT CẢ VÉ
+  Future<void> _confirmCancelledAllTickets(List<Map<String, dynamic>> tickets, StateSetter setDialogState) async {
+    try {
+      // Lấy danh sách ticket codes chưa được xử lý (không phải used và cancelled)
+      final availableTickets = tickets
+          .where((ticket) => ticket['status'] != 'used' && ticket['status'] != 'cancelled')
+          .toList();
+      
+      if (availableTickets.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không có vé nào để hủy!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }      final ticketCodes = availableTickets
+          .map((ticket) => ticket['ticketCode']?.toString() ?? '')
+          .where((code) => code.isNotEmpty)
+          .toList();
 
+      if (ticketCodes.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không tìm thấy mã vé hợp lệ!'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Hiển thị dialog xác nhận
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Xác nhận hủy tất cả vé'),
+          content: Text('Bạn có chắc chắn muốn hủy ${ticketCodes.length} vé?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Không'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Có', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // Hiển thị loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Đang hủy ${ticketCodes.length} vé...', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+      );
+
+      final api = ApiService();
+      final response = await api.updateTicketStatus(ticketCodes, 'cancelled', 'Hành khách đã hủy vé');
+
+      Navigator.of(context).pop(); // Đóng loading dialog
+
+      if (response['code'] == 200) {
+        // Cập nhật trạng thái tất cả vé trong dialog
+        setDialogState(() {
+          for (int i = 0; i < tickets.length; i++) {
+            if (ticketCodes.contains(tickets[i]['ticketCode']?.toString())) {
+              tickets[i]['status'] = 'cancelled';
+              tickets[i]['isUsed'] = true;
+            }
+          }
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hủy thành công ${ticketCodes.length} vé!'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        throw Exception(response['message'] ?? 'Không thể hủy tất cả vé');
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Đóng loading dialog nếu có
+
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  ///XÁC NHẬN TẤT CẢ VÉ
   Future<void> _confirmTicketInDialog(String ticketCode, int index, List<Map<String, dynamic>> tickets, StateSetter setDialogState) async {
     try {
       // Hiển thị loading mini
