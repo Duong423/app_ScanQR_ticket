@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
 import 'qr_scanner_screen.dart' as main_qr;
@@ -96,186 +96,625 @@ class _TripListScreenState extends State<TripListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Danh Sách Chuyến Đi'),
+        title: Text(
+          'Danh Sách Chuyến Đi',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.grey[800],
+        elevation: 0,
+        shadowColor: Colors.grey.withOpacity(0.1),
         actions: [
-         
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.refresh, color: Color.fromARGB(255, 27, 170, 72), size: 20),
+            ),
             onPressed: _fetchTrips,
           ),
+          SizedBox(width: 8),
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.logout, color: Colors.red[600], size: 20),
+            ),
             onPressed: _logout,
           ),
+          SizedBox(width: 16),
         ],
       ),
       body: Column(
         children: [
+          // Header with loading
           if (isLoading) 
-            Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
+            Container(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 27, 170, 72)),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Đang tải danh sách chuyến đi...',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          Expanded(
-            child: trips.isEmpty && !isLoading
-                ? Center(
+          
+          // Trip count info
+          if (!isLoading && trips.isNotEmpty)
+            Container(
+              margin: EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue[50]!, Colors.blue[100]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(255, 27, 170, 72),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.directions_bus, color: Colors.white, size: 20),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.directions_bus, size: 64, color: Colors.grey),
-                        Text('Không có chuyến đi nào', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                        SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _fetchTrips,
-                          child: Text('Tải lại'),
+                        Text(
+                          'Tổng cộng',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color.fromARGB(255, 27, 170, 72),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${trips.length} chuyến đi',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 27, 170, 72),
+                          ),
                         ),
                       ],
                     ),
+                  ),
+                  if (selectedTripId != null)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green[600],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Đã chọn',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          
+          Expanded(
+            child: trips.isEmpty && !isLoading
+                ? Center(
+                    child: Container(
+                      padding: EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.directions_bus_filled,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          Text(
+                            'Không có chuyến đi nào',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Hiện tại chưa có chuyến đi nào được phân công',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _fetchTrips,
+                            icon: Icon(Icons.refresh),
+                            label: Text('Tải lại'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[600],
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 : ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     itemCount: trips.length,
                     itemBuilder: (context, index) {
                       final trip = trips[index];
                       final isSelected = selectedTripId == trip.tripId;
                       
-                      return Card(
-                        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        elevation: isSelected ? 4 : 1,
-                        color: isSelected ? Colors.blue.shade50 : null,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isSelected ? Colors.blue : Colors.grey,
-                            child: Icon(
-                              Icons.directions_bus,
-                              color: Colors.white,
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isSelected 
+                                ? Color.fromARGB(255, 27, 170, 72).withOpacity(0.2)
+                                : Colors.grey.withOpacity(0.1),
+                              blurRadius: isSelected ? 15 : 10,
+                              offset: Offset(0, isSelected ? 8 : 5),
                             ),
-                          ),
-                          title: Text(
-                            '${trip.operatorName ?? 'Nhà xe không xác định'}',
-                            style: TextStyle(
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'ID: ${trip.tripId ?? 'N/A'}',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                              ),
-                              SizedBox(height: 4),
-                              if (trip.route?.startLocation != null)
-                                Text(
-                                  'Từ: ${trip.route!.startLocation}',
-                                  style: TextStyle(fontSize: 13),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              if (trip.route?.endLocation != null)
-                                Text(
-                                  'Đến: ${trip.route!.endLocation}',
-                                  style: TextStyle(fontSize: 13),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              SizedBox(height: 4),
-                              Row(
+                          ],
+                          border: isSelected 
+                            ? Border.all(color: Color.fromARGB(255, 27, 170, 72).withOpacity(0.5), width: 2)
+                            : null,
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              setState(() {
+                                selectedTripId = trip.tripId;
+                              });
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.schedule, size: 14, color: Colors.blue),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    _formatDateTime(trip.departureTime) ?? 'Chưa có thời gian',
-                                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                                  // Header row
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: isSelected 
+                                              ? [Color.fromARGB(255, 27, 170, 72), Color.fromARGB(255, 27, 170, 72)]
+                                              : [Colors.grey[400]!, Colors.grey[600]!],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          Icons.directions_bus,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${trip.operatorName ?? 'Nhà xe không xác định'}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[100],
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'ID: ${trip.tripId ?? 'N/A'}',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey[600],
+                                                  fontFamily: 'monospace',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        Container(
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green[50],
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green[600],
+                                            size: 20,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  
+                                  SizedBox(height: 16),
+                                  
+                                  // Route info
+                                  Container(
+                                    padding: EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        if (trip.route?.startLocation != null)
+                                          Row(
+                                            children: [
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green[600],
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  'Từ: ${trip.route!.startLocation}',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        if (trip.route?.startLocation != null && trip.route?.endLocation != null)
+                                          Container(
+                                            margin: EdgeInsets.symmetric(vertical: 8),
+                                            height: 20,
+                                            child: Row(
+                                              children: [
+                                                SizedBox(width: 4),
+                                                Container(
+                                                  width: 1,
+                                                  color: Colors.grey[300],
+                                                ),
+                                                SizedBox(width: 8),
+                                                Icon(Icons.more_vert, color: Colors.grey[400], size: 16),
+                                              ],
+                                            ),
+                                          ),
+                                        if (trip.route?.endLocation != null)
+                                          Row(
+                                            children: [
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red[600],
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  'Đến: ${trip.route!.endLocation}',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  SizedBox(height: 16),
+                                  
+                                  // Time and status row
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue[50],
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.schedule, size: 16, color: Color.fromARGB(255, 27, 170, 72)),
+                                              SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  _formatDateTime(trip.departureTime) ?? 'Chưa có thời gian',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.blue[700],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: trip.status == 'scheduled' ? Colors.green[50] : 
+                                                 trip.status == 'delayed' ? Colors.orange[50] : Colors.grey[50],
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: trip.status == 'scheduled' ? Colors.green[200]! : 
+                                                   trip.status == 'delayed' ? Colors.orange[200]! : Colors.grey[200]!,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              trip.status == 'scheduled' ? Icons.check_circle : 
+                                              trip.status == 'delayed' ? Icons.warning : Icons.info,
+                                              size: 14,
+                                              color: trip.status == 'scheduled' ? Colors.green[600] : 
+                                                     trip.status == 'delayed' ? Colors.orange[600] : Colors.grey[600],
+                                            ),
+                                            SizedBox(width: 6),
+                                            Text(
+                                              _getStatusText(trip.status),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: trip.status == 'scheduled' ? Colors.green[700] : 
+                                                       trip.status == 'delayed' ? Colors.orange[700] : Colors.grey[700],
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  
+                                  SizedBox(height: 16),
+                                  
+                                  // Bottom info row
+                                  Row(
+                                    children: [
+                                      if (trip.availableSeats != null && trip.totalSeats != null)
+                                        Expanded(
+                                          child: Container(
+                                            padding: EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[50],
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.event_seat, size: 16, color: Colors.grey[600]),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  '${trip.availableSeats}/${trip.totalSeats} chỗ',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[700],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      if (trip.pricePerSeat != null) ...[
+                                        if (trip.availableSeats != null && trip.totalSeats != null)
+                                          SizedBox(width: 12),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [Colors.green[400]!, Colors.green[600]!],
+                                            ),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '${_formatPrice(trip.pricePerSeat!)} VNĐ',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  Icon(
-                                    trip.status == 'scheduled' ? Icons.check_circle : 
-                                    trip.status == 'delayed' ? Icons.warning : Icons.info,
-                                    size: 14,
-                                    color: trip.status == 'scheduled' ? Colors.green : 
-                                           trip.status == 'delayed' ? Colors.orange : Colors.grey,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    _getStatusText(trip.status),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: trip.status == 'scheduled' ? Colors.green : 
-                                             trip.status == 'delayed' ? Colors.orange : Colors.grey,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  if (trip.availableSeats != null && trip.totalSeats != null)
-                                    Text(
-                                      '${trip.availableSeats}/${trip.totalSeats} chỗ',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                                    ),
-                                ],
-                              ),
-                              if (trip.pricePerSeat != null)
-                                Padding(
-                                  padding: EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    '${_formatPrice(trip.pricePerSeat!)} VNĐ',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green[700],
-                                    ),
-                                  ),
-                                ),
-                            ],
+                            ),
                           ),
-                          onTap: () {
-                            setState(() {
-                              selectedTripId = trip.tripId;
-                            });
-                          },
-                          trailing: isSelected
-                              ? Icon(Icons.check_circle, color: Colors.green)
-                              : Icon(Icons.radio_button_unchecked, color: Colors.grey),
                         ),
                       );
                     },
                   ),
           ),
+          
+          // Bottom action button
           Container(
-            padding: EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: selectedTripId != null
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => main_qr.QrScannerScreen(selectedTripId!),
-                          ),
-                        );
-                      }
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: Offset(0, -5),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: selectedTripId != null
+                    ? LinearGradient(
+                        colors: [Color.fromARGB(255, 27, 170, 72), Color.fromARGB(255, 27, 170, 72)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      )
                     : null,
-                icon: Icon(Icons.qr_code_scanner),
-                label: Text('Quét QR Vé'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  color: selectedTripId == null ? Colors.grey[300] : null,
+                  boxShadow: selectedTripId != null ? [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: Offset(0, 8),
+                    ),
+                  ] : null,
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: selectedTripId != null
+                      ? () {
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => 
+                                main_qr.QrScannerScreen(selectedTripId!),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(1.0, 0.0);
+                                const end = Offset.zero;
+                                const curve = Curves.ease;
+
+                                var tween = Tween(begin: begin, end: end).chain(
+                                  CurveTween(curve: curve),
+                                );
+
+                                return SlideTransition(
+                                  position: animation.drive(tween),
+                                  child: child,
+                                );
+                              },
+                              transitionDuration: Duration(milliseconds: 300),
+                            ),
+                          );
+                        }
+                      : null,
+                  icon: Icon(
+                    Icons.qr_code_scanner,
+                    color: selectedTripId != null ? Colors.white : Colors.grey[600],
+                  ),
+                  label: Text(
+                    selectedTripId != null ? 'Quét QR Vé' : 'Chọn chuyến đi để tiếp tục',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: selectedTripId != null ? Colors.white : Colors.grey[600],
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
+          
+          // Error message
           if (errorMessage.isNotEmpty) 
             Container(
+              margin: EdgeInsets.all(16),
               padding: EdgeInsets.all(16),
-              child: Text(
-                errorMessage,
-                style: TextStyle(color: Colors.red),
-                textAlign: TextAlign.center,
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red[600], size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      errorMessage,
+                      style: TextStyle(
+                        color: Colors.red[700],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],

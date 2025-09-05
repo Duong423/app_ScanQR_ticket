@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
 import 'package:flutter/material.dart';
 import 'package:readhoadon/views/login_screen.dart';
 import 'package:readhoadon/views/trip_list_screen.dart';
@@ -18,6 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
+      debugShowCheckedModeBanner: false,
       home: SplashScreen(),
     );
   }
@@ -38,9 +41,9 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     // Đợi một chút để hiển thị splash screen
     await Future.delayed(Duration(seconds: 1));
-    
+
     bool isLoggedIn = await ApiService().isLoggedIn();
-    
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
