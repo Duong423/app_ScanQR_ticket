@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'qr_scanner_screen.dart' as main_qr;
 import 'login_screen.dart';
+import 'passenger_list_screen.dart';
 import 'package:readhoadon/services/api_service.dart';
 import 'package:readhoadon/models/trip_model.dart';
 
@@ -60,6 +61,159 @@ class _TripListScreenState extends State<TripListScreen> {
     );
   }
 
+  Future<void> _updateTripStatus(Trip trip, String newStatus) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      await ApiService().updateTripStatus(trip.tripId!, newStatus);
+      
+      // Cập nhật status của trip trong danh sách
+      setState(() {
+        final index = trips.indexWhere((t) => t.tripId == trip.tripId);
+        if (index != -1) {
+          trips[index] = Trip(
+            tripId: trip.tripId,
+            operatorName: trip.operatorName,
+            route: trip.route,
+            departureTime: trip.departureTime,
+            arrivalTime: trip.arrivalTime,
+            availableSeats: trip.availableSeats,
+            totalSeats: trip.totalSeats,
+            pricePerSeat: trip.pricePerSeat,
+            status: newStatus, // Cập nhật status mới
+          );
+        }
+        isLoading = false;
+      });
+
+      // Hiển thị thông báo thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã cập nhật trạng thái chuyến đi thành công'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi cập nhật: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showStatusUpdateDialog(Trip trip) async {
+    final statusOptions = [
+      {'value': 'scheduled', 'label': 'Đã lên lịch', 'icon': Icons.schedule, 'color': Colors.blue},
+      {'value': 'departed', 'label': 'Đã khởi hành', 'icon': Icons.directions_bus, 'color': Colors.orange},
+      {'value': 'on_time', 'label': 'Đúng giờ', 'icon': Icons.check_circle, 'color': Colors.green},
+      {'value': 'delayed', 'label': 'Trễ giờ', 'icon': Icons.warning, 'color': Colors.amber},
+      {'value': 'arrived', 'label': 'Đã đến', 'icon': Icons.location_on, 'color': Colors.teal},
+      {'value': 'cancelled', 'label': 'Đã hủy', 'icon': Icons.cancel, 'color': Colors.red},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.update, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Cập nhật trạng thái'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chuyến đi: ${trip.operatorName ?? 'N/A'}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  'ID: ${trip.tripId}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Chọn trạng thái mới:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 12),
+                ...statusOptions.map((option) {
+                  final isCurrentStatus = option['value'] == trip.status;
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isCurrentStatus ? (option['color'] as Color).withOpacity(0.1) : null,
+                      borderRadius: BorderRadius.circular(8),
+                      border: isCurrentStatus ? Border.all(
+                        color: (option['color'] as Color).withOpacity(0.3),
+                      ) : null,
+                    ),
+                    child: ListTile(
+                      leading: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: (option['color'] as Color).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          option['icon'] as IconData,
+                          color: option['color'] as Color,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        option['label'] as String,
+                        style: TextStyle(
+                          fontWeight: isCurrentStatus ? FontWeight.w600 : FontWeight.normal,
+                          color: isCurrentStatus ? (option['color'] as Color) : null,
+                        ),
+                      ),
+                      trailing: isCurrentStatus 
+                        ? Icon(Icons.check, color: option['color'] as Color)
+                        : null,
+                      onTap: isCurrentStatus ? null : () {
+                        Navigator.of(context).pop();
+                        _updateTripStatus(trip, option['value'] as String);
+                      },
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Hủy'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Helper methods for formatting
   String? _formatDateTime(String? isoDateTime) {
     if (isoDateTime == null) return null;
@@ -75,8 +229,14 @@ class _TripListScreenState extends State<TripListScreen> {
     switch (status) {
       case 'scheduled':
         return 'Đã lên lịch';
+      case 'departed':
+        return 'Đã khởi hành';
+      case 'on_time':
+        return 'Đúng giờ';
       case 'delayed':
         return 'Trễ giờ';
+      case 'arrived':
+        return 'Đã đến';
       case 'cancelled':
         return 'Đã hủy';
       case 'completed':
@@ -173,63 +333,92 @@ class _TripListScreenState extends State<TripListScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.blue[200]!),
               ),
-              child: Row(
+              child: Column(
                 children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Color.fromARGB(255, 27, 170, 72),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.directions_bus, color: Colors.white, size: 20),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tổng cộng',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color.fromARGB(255, 27, 170, 72),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '${trips.length} chuyến đi',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 27, 170, 72),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (selectedTripId != null)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green[600],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                'Đã chọn',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 27, 170, 72),
+                      color: Colors.amber[50],
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber[200]!),
                     ),
-                    child: Icon(Icons.directions_bus, color: Colors.white, size: 20),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          'Tổng cộng',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color.fromARGB(255, 27, 170, 72),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '${trips.length} chuyến đi',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 27, 170, 72),
+                        Icon(Icons.info, color: Colors.amber[600], size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Nhấn vào chuyến đi để xem khách hàng • Nhấn giữ để chọn quét QR',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.amber[700],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (selectedTripId != null)
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.green[600],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
-                          Text(
-                            'Đã chọn',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -320,9 +509,25 @@ class _TripListScreenState extends State<TripListScreen> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(16),
                             onTap: () {
+                              // Chuyển sang màn hình danh sách khách hàng
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PassengerListScreen(trip: trip),
+                                ),
+                              );
+                            },
+                            onLongPress: () {
+                              // Long press để chọn trip cho quét QR
                               setState(() {
                                 selectedTripId = trip.tripId;
                               });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Đã chọn chuyến đi để quét QR'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
                             },
                             child: Padding(
                               padding: EdgeInsets.all(20),
@@ -379,6 +584,30 @@ class _TripListScreenState extends State<TripListScreen> {
                                               ),
                                             ),
                                           ],
+                                        ),
+                                      ),
+                                      // Nút cập nhật status
+                                      Container(
+                                        margin: EdgeInsets.only(right: 8),
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(8),
+                                            onTap: () => _showStatusUpdateDialog(trip),
+                                            child: Container(
+                                              padding: EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue[50],
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: Colors.blue[200]!),
+                                              ),
+                                              child: Icon(
+                                                Icons.update,
+                                                color: Colors.blue[600],
+                                                size: 18,
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       if (isSelected)
@@ -510,31 +739,51 @@ class _TripListScreenState extends State<TripListScreen> {
                                       Container(
                                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                         decoration: BoxDecoration(
-                                          color: trip.status == 'scheduled' ? Colors.green[50] : 
-                                                 trip.status == 'delayed' ? Colors.orange[50] : Colors.grey[50],
+                                          color: trip.status == 'scheduled' ? Colors.blue[50] : 
+                                                 trip.status == 'departed' ? Colors.orange[50] :
+                                                 trip.status == 'on_time' ? Colors.green[50] :
+                                                 trip.status == 'delayed' ? Colors.amber[50] : 
+                                                 trip.status == 'arrived' ? Colors.teal[50] :
+                                                 trip.status == 'cancelled' ? Colors.red[50] : Colors.grey[50],
                                           borderRadius: BorderRadius.circular(8),
                                           border: Border.all(
-                                            color: trip.status == 'scheduled' ? Colors.green[200]! : 
-                                                   trip.status == 'delayed' ? Colors.orange[200]! : Colors.grey[200]!,
+                                            color: trip.status == 'scheduled' ? Colors.blue[200]! : 
+                                                   trip.status == 'departed' ? Colors.orange[200]! :
+                                                   trip.status == 'on_time' ? Colors.green[200]! :
+                                                   trip.status == 'delayed' ? Colors.amber[200]! : 
+                                                   trip.status == 'arrived' ? Colors.teal[200]! :
+                                                   trip.status == 'cancelled' ? Colors.red[200]! : Colors.grey[200]!,
                                           ),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              trip.status == 'scheduled' ? Icons.check_circle : 
-                                              trip.status == 'delayed' ? Icons.warning : Icons.info,
+                                              trip.status == 'scheduled' ? Icons.schedule : 
+                                              trip.status == 'departed' ? Icons.directions_bus :
+                                              trip.status == 'on_time' ? Icons.check_circle :
+                                              trip.status == 'delayed' ? Icons.warning : 
+                                              trip.status == 'arrived' ? Icons.location_on :
+                                              trip.status == 'cancelled' ? Icons.cancel : Icons.info,
                                               size: 14,
-                                              color: trip.status == 'scheduled' ? Colors.green[600] : 
-                                                     trip.status == 'delayed' ? Colors.orange[600] : Colors.grey[600],
+                                              color: trip.status == 'scheduled' ? Colors.blue[600] : 
+                                                     trip.status == 'departed' ? Colors.orange[600] :
+                                                     trip.status == 'on_time' ? Colors.green[600] :
+                                                     trip.status == 'delayed' ? Colors.amber[600] : 
+                                                     trip.status == 'arrived' ? Colors.teal[600] :
+                                                     trip.status == 'cancelled' ? Colors.red[600] : Colors.grey[600],
                                             ),
                                             SizedBox(width: 6),
                                             Text(
                                               _getStatusText(trip.status),
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: trip.status == 'scheduled' ? Colors.green[700] : 
-                                                       trip.status == 'delayed' ? Colors.orange[700] : Colors.grey[700],
+                                                color: trip.status == 'scheduled' ? Colors.blue[700] : 
+                                                       trip.status == 'departed' ? Colors.orange[700] :
+                                                       trip.status == 'on_time' ? Colors.green[700] :
+                                                       trip.status == 'delayed' ? Colors.amber[700] : 
+                                                       trip.status == 'arrived' ? Colors.teal[700] :
+                                                       trip.status == 'cancelled' ? Colors.red[700] : Colors.grey[700],
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
