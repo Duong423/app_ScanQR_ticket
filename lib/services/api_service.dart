@@ -5,7 +5,28 @@ import '/models/trip_model.dart';
 import '/models/passenger_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.0.96:8080/api'; // Thay bằng URL thực tế
+  static String baseUrl = 'http://192.168.1.9:8080/api'; // URL mặc định
+  
+  // Cập nhật baseUrl
+  static void updateBaseUrl(String newBaseUrl) {
+    baseUrl = newBaseUrl;
+  }
+  
+  // Test kết nối đến server
+  Future<void> testConnection() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/health'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(Duration(seconds: 5));
+      
+      // Nếu server phản hồi (bất kể status code) thì coi như kết nối thành công
+      print('Server responded with status: ${response.statusCode}');
+    } catch (e) {
+      // Ném lại exception để caller xử lý
+      rethrow;
+    }
+  }
 
   // Đăng nhập và lưu token
   Future<String> login(String username, String password) async {

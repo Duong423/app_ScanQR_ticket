@@ -1,6 +1,8 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:readhoadon/views/ip_config_screen.dart';
 import 'package:readhoadon/views/login_screen.dart';
 import 'package:readhoadon/views/trip_list_screen.dart';
 import 'package:readhoadon/services/api_service.dart';
@@ -42,6 +44,25 @@ class _SplashScreenState extends State<SplashScreen> {
     // Đợi một chút để hiển thị splash screen
     await Future.delayed(Duration(seconds: 1));
 
+    // Kiểm tra xem đã cấu hình IP chưa
+    final prefs = await SharedPreferences.getInstance();
+    final savedIp = prefs.getString('server_ip');
+    
+    if (savedIp == null) {
+      // Chưa cấu hình IP, chuyển sang màn hình cấu hình
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => IpConfigScreen()),
+        );
+      }
+      return;
+    }
+    
+    // Đã có IP, cập nhật baseUrl
+    ApiService.updateBaseUrl('http://$savedIp:8080/api');
+    
+    // Kiểm tra trạng thái đăng nhập
     bool isLoggedIn = await ApiService().isLoggedIn();
 
     if (mounted) {

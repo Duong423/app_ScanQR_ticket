@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'trip_list_screen.dart'; // Chuyển đến màn hình chuyến đi sau đăng nhập
+import 'ip_config_screen.dart';
 import '/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -291,6 +292,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Color.fromARGB(255, 27, 170, 72),
                           ),
                           textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20),
+                        // Nút cấu hình IP
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => IpConfigScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.settings,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Cấu hình Server',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ],
                     ),
