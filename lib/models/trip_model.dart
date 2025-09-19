@@ -50,7 +50,6 @@ class Trip {
   factory Trip.fromJson(Map<String, dynamic> json) => _$TripFromJson(json);
   Map<String, dynamic> toJson() => _$TripToJson(this);
   
-  // Getter cho bookingId để tương thích với code hiện tại
   String? get bookingId => tripId?.toString();
 }
 

@@ -12,7 +12,7 @@ class ApiService {
     baseUrl = newBaseUrl;
   }
   
-  // Test kết nối đến server
+  //test ip kết nối server
   Future<void> testConnection() async {
     try {
       final response = await http.get(
@@ -74,7 +74,7 @@ class ApiService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('Response data: $data'); // Debug log
+        print('Response data: $data'); 
         
         // Kiểm tra nếu data là Map và có key 'result' hoặc tương tự
         if (data is Map<String, dynamic>) {
@@ -87,18 +87,15 @@ class ApiService {
           } else if (data.containsKey('trips')) {
             trips = data['trips'] as List<dynamic>;
           } else {
-            // Nếu không tìm thấy key nào, thử trả về toàn bộ data
             throw Exception('Không tìm thấy danh sách chuyến đi trong response: ${data.keys}');
           }
           return trips.map((json) => Trip.fromJson(json)).toList();
         } else if (data is List<dynamic>) {
-          // Nếu API trả về trực tiếp một List
           return data.map((json) => Trip.fromJson(json)).toList();
         } else {
           throw Exception('Format response không đúng: ${data.runtimeType}');
         }
       } else if (response.statusCode == 401) {
-        // Token hết hạn
         await prefs.remove('accessToken');
         throw Exception('Phiên đăng nhập đã hết hạn');
       } else {
@@ -113,7 +110,6 @@ class ApiService {
     }
   }
 
-  // Validate booking với trip
   Future<Map<String, dynamic>> validateBookingTrip(int tripId, String bookingCode) async {
     try {
       final prefs = await SharedPreferences.getInstance();

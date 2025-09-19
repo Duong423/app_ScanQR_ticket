@@ -57,11 +57,10 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
         }
       }
     } else {
-      // IP mặc định
-      _controllers[0].text = '192';
-      _controllers[1].text = '168';
-      _controllers[2].text = '1';
-      _controllers[3].text = '9';
+      // Để trống để người dùng tự nhập, không có IP mặc định cố định
+      for (int i = 0; i < 4; i++) {
+        _controllers[i].text = '';
+      }
     }
   }
 
@@ -80,12 +79,17 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
         }
         final num = int.tryParse(text);
         if (num == null || num < 0 || num > 255) {
-          throw Exception('Địa chỉ IP không hợp lệ (0-255)');
+          throw Exception('Địa chỉ IP không hợp lệ (mỗi phần từ 0-255)');
         }
       }
 
-      // Tạo IP string
+      // Tạo IP string và kiểm tra format
       final ip = _controllers.map((c) => c.text.trim()).join('.');
+      
+      // Validate IP format bằng RegExp
+      if (!_isValidIpFormat(ip)) {
+        throw Exception('Định dạng địa chỉ IP không hợp lệ');
+      }
       
       // Lưu IP vào SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -111,6 +115,81 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
     }
   }
 
+  bool _isValidIpFormat(String ip) {
+    // RegExp để validate IPv4 address - hỗ trợ tất cả dạng IP hợp lệ
+    final ipv4Pattern = RegExp(
+      r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+    );
+    
+    if (!ipv4Pattern.hasMatch(ip)) {
+      return false;
+    }
+    
+    // Kiểm tra thêm: không cho phép IP reserved hoặc không hợp lệ
+    final parts = ip.split('.').map(int.parse).toList();
+    
+    // 0.0.0.0 không hợp lệ
+    if (parts.every((part) => part == 0)) {
+      return false;
+    }
+    
+    // 255.255.255.255 là broadcast
+    if (parts.every((part) => part == 255)) {
+      return false;
+    }
+    
+    // Các IP khác đều hợp lệ (bao gồm private, public, loopback, etc.)
+    return true;
+  }
+
+  Widget _buildPresetButton(String label, String ip) {
+    return GestureDetector(
+      onTap: () => _setPresetIp(ip),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              ip,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _setPresetIp(String ip) {
+    final parts = ip.split('.');
+    if (parts.length == 4) {
+      for (int i = 0; i < 4; i++) {
+        _controllers[i].text = parts[i];
+      }
+      setState(() {
+        _errorMessage = '';
+      });
+    }
+  }
+
   Future<void> _testConnection() async {
     try {
       
@@ -127,10 +206,38 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
   }
 
   void _onIpPartChanged(String value, int index) {
-    if (value.length >= 3 || (value.isNotEmpty && int.tryParse(value) != null && int.parse(value) > 25)) {
-      // Tự động chuyển sang ô tiếp theo
-      if (index < 3) {
-        _focusNodes[index + 1].requestFocus();
+    // Logic thông minh để tự động chuyển focus dựa trên giá trị nhập
+    if (value.isNotEmpty) {
+      final num = int.tryParse(value);
+      if (num != null && num >= 0 && num <= 255) {
+        // Tự động chuyển focus dựa trên context thông minh
+        bool shouldMoveNext = false;
+        
+        if (value.length == 3) {
+          // Đã nhập đủ 3 chữ số, luôn chuyển
+          shouldMoveNext = true;
+        } else if (value.length == 2) {
+          // Nếu nhập 2 chữ số và số >= 26, có thể chuyển
+          // Vì người dùng có thể muốn nhập 192, 168, 221, v.v.
+          if (num >= 26) {
+            shouldMoveNext = true;
+          }
+        } else if (value.length == 1) {
+          // Chỉ chuyển nếu số >= 4 (vì hiếm khi có IP bắt đầu bằng 4xx, 5xx, ...)
+          // Trừ khi là các số đặc biệt như 1, 2, 3 trong context phù hợp
+          if (num >= 4) {
+            shouldMoveNext = true;
+          }
+        }
+        
+        if (shouldMoveNext && index < 3) {
+          // Delay nhỏ để người dùng có thể tiếp tục nhập nếu muốn
+          Future.delayed(Duration(milliseconds: 500), () {
+            if (_controllers[index].text == value && value.isNotEmpty) {
+              _focusNodes[index + 1].requestFocus();
+            }
+          });
+        }
       }
     }
   }
@@ -258,6 +365,7 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
                                         hintStyle: TextStyle(
                                           color: Colors.grey[400],
                                         ),
+                                        contentPadding: EdgeInsets.symmetric(vertical: 18),
                                       ),
                                       onChanged: (value) => _onIpPartChanged(value, i),
                                       onTap: () {
@@ -287,6 +395,32 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
                           
                           SizedBox(height: 16),
                           
+                          // Quick preset buttons
+                          Text(
+                            'IP phổ biến:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          
+                          SizedBox(height: 8),
+                          
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildPresetButton('Localhost', '127.0.0.1'),
+                              _buildPresetButton('Router', '192.168.1.1'),
+                              _buildPresetButton('Private A', '10.0.0.1'),
+                              _buildPresetButton('Private B', '172.16.0.1'),
+                              _buildPresetButton('Custom', '10.221.36.86'),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 16),
+                          
                           // Example
                           Container(
                             padding: EdgeInsets.all(12),
@@ -300,7 +434,7 @@ class _IpConfigScreenState extends State<IpConfigScreen> {
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Ví dụ: 192.168.1.9 hoặc 10.0.0.1',
+                                    'Ví dụ: 10.221.36.86, 192.168.1.9, 172.16.0.1, 203.113.1.100',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color.fromARGB(255, 27, 170, 72),

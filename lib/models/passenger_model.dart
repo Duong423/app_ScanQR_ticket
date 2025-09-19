@@ -24,9 +24,8 @@ class Passenger {
   factory Passenger.fromJson(Map<String, dynamic> json) {
     return Passenger(
       ticketId: json['ticketId'],
-      fullName: json['passengerName'], // API trả về passengerName
-      phoneNumber: json['passengerPhone'], // API trả về passengerPhone
-      email: json['email'],
+      fullName: json['passengerName'], 
+      phoneNumber: json['passengerPhone'], 
       seatNumber: json['seatNumber'],
       ticketCode: json['ticketCode'],
       status: json['status'],
