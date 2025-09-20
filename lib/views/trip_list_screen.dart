@@ -111,11 +111,59 @@ class _TripListScreenState extends State<TripListScreen> {
     }
   }
 
+  // Kiểm tra trạng thái có thể chuyển đổi được hay không
+  bool _canTransitionToStatus(String currentStatus, String newStatus) {
+    // arrived và cancelled là trạng thái cuối, không thể chuyển tiếp
+    if (currentStatus == 'arrived' || currentStatus == 'cancelled') {
+      return false;
+    }
+    
+    // scheduled chỉ có thể chuyển sang departed (duy nhất)
+    if (currentStatus == 'scheduled') {
+      return newStatus == 'departed';
+    }
+    
+    // Từ departed có thể chuyển sang delayed, arrived, hoặc cancelled
+    if (currentStatus == 'departed') {
+      return ['delayed', 'arrived', 'cancelled'].contains(newStatus);
+    }
+    
+    // Từ delayed chỉ có thể chuyển sang arrived hoặc cancelled
+    if (currentStatus == 'delayed') {
+      return ['arrived', 'cancelled'].contains(newStatus);
+    }
+    
+    // Từ các trạng thái khác (on_time) có thể chuyển sang bất kỳ trạng thái nào
+    return true;
+  }
+
+  String _getValidationMessage(String currentStatus, String newStatus) {
+    if (currentStatus == 'arrived') {
+      return 'Chuyến đi đã đến nơi, không thể thay đổi trạng thái';
+    }
+    
+    if (currentStatus == 'cancelled') {
+      return 'Chuyến đi đã bị hủy, không thể thay đổi trạng thái';
+    }
+    
+    if (currentStatus == 'scheduled' && newStatus != 'departed') {
+      return 'Từ trạng thái "Đã lên lịch" chỉ có thể chuyển sang "Đã khởi hành"';
+    }
+    
+    if (currentStatus == 'departed' && !['delayed', 'arrived', 'cancelled'].contains(newStatus)) {
+      return 'Từ trạng thái "Đã khởi hành" chỉ có thể chuyển sang "Trễ giờ", "Đã đến" hoặc "Đã hủy"';
+    }
+    
+    if (currentStatus == 'delayed' && !['arrived', 'cancelled'].contains(newStatus)) {
+      return 'Từ trạng thái "Trễ giờ" chỉ có thể chuyển sang "Đã đến" hoặc "Đã hủy"';
+    }
+    
+    return '';
+  }
+
   Future<void> _showStatusUpdateDialog(Trip trip) async {
     final statusOptions = [
-      {'value': 'scheduled', 'label': 'Đã lên lịch', 'icon': Icons.schedule, 'color': Colors.blue},
       {'value': 'departed', 'label': 'Đã khởi hành', 'icon': Icons.directions_bus, 'color': Colors.orange},
-      {'value': 'on_time', 'label': 'Đúng giờ', 'icon': Icons.check_circle, 'color': Colors.green},
       {'value': 'delayed', 'label': 'Trễ giờ', 'icon': Icons.warning, 'color': Colors.amber},
       {'value': 'arrived', 'label': 'Đã đến', 'icon': Icons.location_on, 'color': Colors.teal},
       {'value': 'cancelled', 'label': 'Đã hủy', 'icon': Icons.cancel, 'color': Colors.red},
@@ -153,33 +201,63 @@ class _TripListScreenState extends State<TripListScreen> {
                 ),
                 SizedBox(height: 16),
                 Text(
+                  'Trạng thái hiện tại:',
+                  style: TextStyle(
+                    color: Colors.red[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '*${trip.status}',
+                  style: TextStyle(
+                    color: const Color.fromARGB(255, 1, 1, 1),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
                   'Chọn trạng thái mới:',
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                Text(
+                  'Lưu ý: Phải cập nhật Đã khởi hành để bắt đầu hành trình',
+                  style: TextStyle(
+                    color: Colors.orange[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
                 SizedBox(height: 12),
                 ...statusOptions.map((option) {
                   final isCurrentStatus = option['value'] == trip.status;
+                  final canTransition = _canTransitionToStatus(trip.status ?? '', option['value'] as String);
+                  final validationMessage = _getValidationMessage(trip.status ?? '', option['value'] as String);
+                  
                   return Container(
                     margin: EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
-                      color: isCurrentStatus ? (option['color'] as Color).withOpacity(0.1) : null,
+                      color: isCurrentStatus ? (option['color'] as Color).withOpacity(0.1) : 
+                             !canTransition ? Colors.grey[50] : null,
                       borderRadius: BorderRadius.circular(8),
                       border: isCurrentStatus ? Border.all(
                         color: (option['color'] as Color).withOpacity(0.3),
+                      ) : !canTransition ? Border.all(
+                        color: Colors.grey[300]!,
                       ) : null,
                     ),
                     child: ListTile(
                       leading: Container(
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: (option['color'] as Color).withOpacity(0.1),
+                          color: !canTransition ? Colors.grey[200] : (option['color'] as Color).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           option['icon'] as IconData,
-                          color: option['color'] as Color,
+                          color: !canTransition ? Colors.grey[400] : option['color'] as Color,
                           size: 20,
                         ),
                       ),
@@ -187,13 +265,38 @@ class _TripListScreenState extends State<TripListScreen> {
                         option['label'] as String,
                         style: TextStyle(
                           fontWeight: isCurrentStatus ? FontWeight.w600 : FontWeight.normal,
-                          color: isCurrentStatus ? (option['color'] as Color) : null,
+                          color: isCurrentStatus ? (option['color'] as Color) : 
+                                 !canTransition ? Colors.grey[400] : null,
                         ),
                       ),
+                      subtitle: !canTransition && !isCurrentStatus ? Text(
+                        'Không thể chuyển',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ) : null,
                       trailing: isCurrentStatus 
                         ? Icon(Icons.check, color: option['color'] as Color)
-                        : null,
-                      onTap: isCurrentStatus ? null : () {
+                        : !canTransition 
+                          ? Icon(Icons.block, color: Colors.grey[400], size: 16)
+                          : null,
+                      onTap: isCurrentStatus || !canTransition ? () {
+                        if (!canTransition && validationMessage.isNotEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(validationMessage),
+                              backgroundColor: Colors.orange[600],
+                              duration: Duration(seconds: 3),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          );
+                        }
+                      } : () {
                         Navigator.of(context).pop();
                         _updateTripStatus(trip, option['value'] as String);
                       },
@@ -759,16 +862,16 @@ class _TripListScreenState extends State<TripListScreen> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              trip.status == 'scheduled' ? Icons.schedule : 
+                                              
                                               trip.status == 'departed' ? Icons.directions_bus :
-                                              trip.status == 'on_time' ? Icons.check_circle :
+                                              
                                               trip.status == 'delayed' ? Icons.warning : 
                                               trip.status == 'arrived' ? Icons.location_on :
                                               trip.status == 'cancelled' ? Icons.cancel : Icons.info,
                                               size: 14,
-                                              color: trip.status == 'scheduled' ? Colors.blue[600] : 
+                                              color: 
                                                      trip.status == 'departed' ? Colors.orange[600] :
-                                                     trip.status == 'on_time' ? Colors.green[600] :
+                                                    
                                                      trip.status == 'delayed' ? Colors.amber[600] : 
                                                      trip.status == 'arrived' ? Colors.teal[600] :
                                                      trip.status == 'cancelled' ? Colors.red[600] : Colors.grey[600],
@@ -778,9 +881,9 @@ class _TripListScreenState extends State<TripListScreen> {
                                               _getStatusText(trip.status),
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: trip.status == 'scheduled' ? Colors.blue[700] : 
+                                                color: 
                                                        trip.status == 'departed' ? Colors.orange[700] :
-                                                       trip.status == 'on_time' ? Colors.green[700] :
+                                                      
                                                        trip.status == 'delayed' ? Colors.amber[700] : 
                                                        trip.status == 'arrived' ? Colors.teal[700] :
                                                        trip.status == 'cancelled' ? Colors.red[700] : Colors.grey[700],
