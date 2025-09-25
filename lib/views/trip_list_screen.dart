@@ -118,9 +118,9 @@ class _TripListScreenState extends State<TripListScreen> {
       return false;
     }
     
-    // scheduled chỉ có thể chuyển sang departed (duy nhất)
+    // scheduled có thể chuyển sang departed hoặc delayed
     if (currentStatus == 'scheduled') {
-      return newStatus == 'departed';
+      return ['departed', 'delayed'].contains(newStatus);
     }
     
     // Từ departed có thể chuyển sang delayed, arrived, hoặc cancelled
@@ -146,8 +146,8 @@ class _TripListScreenState extends State<TripListScreen> {
       return 'Chuyến đi đã bị hủy, không thể thay đổi trạng thái';
     }
     
-    if (currentStatus == 'scheduled' && newStatus != 'departed') {
-      return 'Từ trạng thái "Đã lên lịch" chỉ có thể chuyển sang "Đã khởi hành"';
+    if (currentStatus == 'scheduled' && !['departed', 'delayed'].contains(newStatus)) {
+      return 'Từ trạng thái "Đã lên lịch" chỉ có thể chuyển sang "Đã khởi hành" hoặc "Trễ giờ"';
     }
     
     if (currentStatus == 'departed' && !['delayed', 'arrived', 'cancelled'].contains(newStatus)) {
@@ -200,14 +200,14 @@ class _TripListScreenState extends State<TripListScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-                Text(
-                  'Trạng thái hiện tại:',
-                  style: TextStyle(
-                    color: Colors.red[600],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
+                // Text(
+                //   'Trạng thái hiện tại:',
+                //   style: TextStyle(
+                //     color: Colors.red[600],
+                //     fontWeight: FontWeight.bold,
+                //   ),
+                // ),
+                // SizedBox(height: 8),
                 Text(
                   '*${trip.status}',
                   style: TextStyle(
