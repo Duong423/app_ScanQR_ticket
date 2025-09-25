@@ -185,13 +185,13 @@ class _TripListScreenState extends State<TripListScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Chuyến đi: ${trip.operatorName ?? 'N/A'}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                // Text(
+                //   'Chuyến đi: ${trip.route ?? 'N/A'}',
+                //   style: TextStyle(
+                //     fontWeight: FontWeight.w600,
+                //     fontSize: 16,
+                //   ),
+                // ),
                 Text(
                   'ID: ${trip.tripId}',
                   style: TextStyle(
