@@ -133,6 +133,11 @@ class _TripListScreenState extends State<TripListScreen> {
       return ['arrived', 'cancelled'].contains(newStatus);
     }
     
+    // Từ onsell chỉ có thể chuyển sang departed, delayed, cancelled (không cho phép arrived)
+    if (currentStatus == 'on_sell') {
+      return ['departed', 'delayed', 'cancelled'].contains(newStatus);
+    }
+    
     // Từ các trạng thái khác (on_time) có thể chuyển sang bất kỳ trạng thái nào
     return true;
   }
@@ -156,6 +161,10 @@ class _TripListScreenState extends State<TripListScreen> {
     
     if (currentStatus == 'delayed' && !['arrived', 'cancelled'].contains(newStatus)) {
       return 'Từ trạng thái "Trễ giờ" chỉ có thể chuyển sang "Đã đến" hoặc "Đã hủy"';
+    }
+    
+    if (currentStatus == 'on_sell' && !['departed', 'delayed', 'cancelled'].contains(newStatus)) {
+      return 'Từ trạng thái "Đang bán vé" chỉ có thể chuyển sang "Đã khởi hành", "Trễ giờ" hoặc "Đã hủy"';
     }
     
     return '';
@@ -236,6 +245,9 @@ class _TripListScreenState extends State<TripListScreen> {
                   final canTransition = _canTransitionToStatus(trip.status ?? '', option['value'] as String);
                   final validationMessage = _getValidationMessage(trip.status ?? '', option['value'] as String);
                   
+                  // Debug: In ra console để kiểm tra
+                  print('Current status: ${trip.status}, New status: ${option['value']}, Can transition: $canTransition');
+                  
                   return Container(
                     margin: EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
@@ -282,20 +294,19 @@ class _TripListScreenState extends State<TripListScreen> {
                         : !canTransition 
                           ? Icon(Icons.block, color: Colors.grey[400], size: 16)
                           : null,
-                      onTap: isCurrentStatus || !canTransition ? () {
-                        if (!canTransition && validationMessage.isNotEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(validationMessage),
-                              backgroundColor: Colors.orange[600],
-                              duration: Duration(seconds: 3),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                      onTap: isCurrentStatus ? null : !canTransition ? () {
+                        // Hiển thị thông báo lỗi khi không thể chuyển trạng thái
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(validationMessage.isNotEmpty ? validationMessage : 'Không thể chuyển sang trạng thái này'),
+                            backgroundColor: Colors.orange[600],
+                            duration: Duration(seconds: 3),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          );
-                        }
+                          ),
+                        );
                       } : () {
                         Navigator.of(context).pop();
                         _updateTripStatus(trip, option['value'] as String);
